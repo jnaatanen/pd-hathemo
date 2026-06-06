@@ -1,0 +1,37 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "data": {
+                    "username": "Username (email)",
+                    "password": "Password"
+                }
+            },
+            "reauth_confirm": {
+                "data": {
+                    "username": "Username (email)",
+                    "password": "Password"
+                }
+            }
+        },
+        "error": {
+            "invalid_auth": "Invalid authentication",
+            "cannot_connect": "Failed to connect",
+            "unknown": "Unexpected error"
+        },
+        "abort": {
+            "already_configured": "Account is already configured",
+            "reauth_successful": "Re-authentication was successful"
+        }
+    },
+    "entity": {
+        "sensor": {
+            "room_temperature": {"name": "Room temperature"},
+            "floor_temperature": {"name": "Floor temperature"},
+            "outside_temperature": {"name": "Outside temperature"}
+        },
+        "light": {
+            "backlight": {"name": "Backlight"}
+        }
+    }
+}

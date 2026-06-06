@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local development / test environment (intentionally kept out of the public repo)
+docker/
+scripts/
+tests/
+docs/
+conftest.py
+requirements_test.txt
+pyproject.toml
+themo-swagger.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp

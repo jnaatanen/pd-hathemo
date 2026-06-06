@@ -1,0 +1,37 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "data": {
+                    "username": "Kayttajatunnus (sahkoposti)",
+                    "password": "Salasana"
+                }
+            },
+            "reauth_confirm": {
+                "data": {
+                    "username": "Kayttajatunnus (sahkoposti)",
+                    "password": "Salasana"
+                }
+            }
+        },
+        "error": {
+            "invalid_auth": "Virheelliset tunnukset",
+            "cannot_connect": "Yhteys epaonnistui",
+            "unknown": "Odottamaton virhe"
+        },
+        "abort": {
+            "already_configured": "Tili on jo maaritetty",
+            "reauth_successful": "Uudelleenkirjautuminen onnistui"
+        }
+    },
+    "entity": {
+        "sensor": {
+            "room_temperature": {"name": "Huonelampotila"},
+            "floor_temperature": {"name": "Lattialampotila"},
+            "outside_temperature": {"name": "Ulkolampotila"}
+        },
+        "light": {
+            "backlight": {"name": "Taustavalo"}
+        }
+    }
+}
