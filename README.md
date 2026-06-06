@@ -74,6 +74,16 @@ of hours to render newly added sources.
 - Control commands (temperature, mode, backlight) are applied **optimistically** because the
   Themo cloud reflects commanded state with a delay.
 
+## Roadmap
+
+Possible future additions (not yet implemented):
+
+- **Schedule switching** — Themo supports multiple named heating schedules per
+  thermostat (e.g. "Home", "Away"). A future version could expose the active schedule
+  as a climate `preset_mode`, so schedules can be switched directly from Home Assistant.
+  (Themo allows one active schedule per parameter, which the implementation would need to
+  account for.)
+
 ## License
 
 [MIT](LICENSE) (c) Jouko Naatanen.
