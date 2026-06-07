@@ -28,7 +28,9 @@
         "sensor": {
             "room_temperature": {"name": "Huonelampotila"},
             "floor_temperature": {"name": "Lattialampotila"},
-            "outside_temperature": {"name": "Ulkolampotila"}
+            "outside_temperature": {"name": "Ulkolampotila"},
+            "heating_today_running": {"name": "Lammitys tanaan (live)"},
+            "heating_today_total": {"name": "Lammitys tanaan"}
         },
         "light": {
             "backlight": {"name": "Taustavalo"}

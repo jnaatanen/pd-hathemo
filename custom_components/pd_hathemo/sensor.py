@@ -11,14 +11,17 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import EntityCategory, UnitOfTemperature
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from . import ThemoConfigEntry
 from .api import DeviceState, ThemoDevice
+from .const import SECONDS_PER_DAY
 from .coordinator import ThemoStateCoordinator
 from .entity import ThemoBaseEntity
+from .heating import DailyHeatingTracker
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -76,9 +79,12 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     coordinator = entry.runtime_data.state_coordinator
-    entities: list[ThemoSensor] = []
+    trackers = entry.runtime_data.heating_trackers
+    entities: list[SensorEntity] = []
     for device in coordinator.data.values():
         entities.extend(build_sensors(coordinator, device))
+        entities.append(ThemoHeatingTodayRunningSensor(coordinator, device, trackers))
+        entities.append(ThemoHeatingTodayCumulativeSensor(coordinator, device, trackers))
     async_add_entities(entities)
 
 
@@ -102,3 +108,56 @@ class ThemoSensor(ThemoBaseEntity, SensorEntity):
         if self.device.state is None:
             return None
         return self.entity_description.value_fn(self.device.state)
+
+
+class ThemoHeatingTodayRunningSensor(ThemoBaseEntity, SensorEntity):
+    """Share of the elapsed day so far that the heating element has been on."""
+
+    _attr_translation_key = "heating_today_running"
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(
+        self,
+        coordinator: ThemoStateCoordinator,
+        device: ThemoDevice,
+        trackers: dict[int, DailyHeatingTracker],
+    ) -> None:
+        super().__init__(coordinator, device)
+        self._trackers = trackers
+        self._attr_unique_id = f"{device.id}_heating_today_running"
+
+    @property
+    def native_value(self) -> float | None:
+        tracker = self._trackers.get(self._device_id)
+        if tracker is None:
+            return None
+        elapsed = (dt_util.now() - dt_util.start_of_local_day()).total_seconds()
+        if elapsed <= 0:
+            return None
+        return round(tracker.on_seconds / elapsed * 100, 1)
+
+
+class ThemoHeatingTodayCumulativeSensor(ThemoBaseEntity, SensorEntity):
+    """Share of the full 24 h day so far that the heating element has been on."""
+
+    _attr_translation_key = "heating_today_total"
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(
+        self,
+        coordinator: ThemoStateCoordinator,
+        device: ThemoDevice,
+        trackers: dict[int, DailyHeatingTracker],
+    ) -> None:
+        super().__init__(coordinator, device)
+        self._trackers = trackers
+        self._attr_unique_id = f"{device.id}_heating_today_total"
+
+    @property
+    def native_value(self) -> float | None:
+        tracker = self._trackers.get(self._device_id)
+        if tracker is None:
+            return None
+        return round(tracker.on_seconds / SECONDS_PER_DAY * 100, 1)

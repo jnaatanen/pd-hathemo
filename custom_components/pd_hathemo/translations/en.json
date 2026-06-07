@@ -28,7 +28,9 @@
         "sensor": {
             "room_temperature": {"name": "Room temperature"},
             "floor_temperature": {"name": "Floor temperature"},
-            "outside_temperature": {"name": "Outside temperature"}
+            "outside_temperature": {"name": "Outside temperature"},
+            "heating_today_running": {"name": "Heating today (running)"},
+            "heating_today_total": {"name": "Heating today"}
         },
         "light": {
             "backlight": {"name": "Backlight"}
