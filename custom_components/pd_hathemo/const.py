@@ -20,3 +20,8 @@ ENERGY_INCREMENTAL_DAYS = 2  # overlap window on incremental runs; dedup makes i
 MODE_OFF = "Off"
 MODE_MANUAL = "Manual"
 MODE_SLS = "SLS"
+
+# Heating-activity tracking
+STORAGE_KEY = "pd_hathemo_heating"
+STORAGE_VERSION = 1
+SECONDS_PER_DAY = 86400
