@@ -78,7 +78,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ThemoConfigEntry) -> boo
         for dev in state_coordinator.data.values():
             if dev.state is None:
                 continue
-            trackers[dev.id].update(now, dev.state.load_state == 1, today)
+            tracker = trackers.get(dev.id)
+            if tracker is None:
+                tracker = trackers[dev.id] = DailyHeatingTracker()
+            tracker.update(now, dev.state.load_state == 1, today)
         store.async_delay_save(
             lambda: {str(k): t.to_storage() for k, t in trackers.items()}, 30
         )
