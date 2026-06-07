@@ -85,10 +85,11 @@ Possible future additions (not yet implemented):
   account for.)
 - **Heating activity ("heating now")** — Each thermostat reports whether its heating
   element is currently on or off. A future version could expose this as a `binary_sensor`
-  per room, from which Home Assistant's History Stats can show how much of the day each
-  room has been heating. (Because the element is simply on/off, an accurate daily
-  duty-cycle can also be derived from the already-imported hourly energy divided by the
-  element's rated power.)
+  per room.
+- **Daily heating %** — From that `binary_sensor`, Home Assistant's History Stats
+  (`type: ratio`) can show what share of the day each room's heating has been on. This is
+  measured directly from on/off time and needs no power or energy figures, so it is
+  unaffected by whether the configured element power is accurate.
 
 ## License
 
