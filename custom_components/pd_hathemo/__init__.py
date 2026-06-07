@@ -6,13 +6,16 @@ from dataclasses import dataclass
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.httpx_client import get_async_client
+from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 
 from .api import ThemoApiClient, ThemoAuthError, ThemoConnectionError
-from .const import PLATFORMS
+from .const import PLATFORMS, STORAGE_KEY, STORAGE_VERSION
 from .coordinator import ThemoEnergyCoordinator, ThemoStateCoordinator
+from .heating import DailyHeatingTracker
 
 
 @dataclass
@@ -22,6 +25,7 @@ class ThemoRuntimeData:
     client: ThemoApiClient
     state_coordinator: ThemoStateCoordinator
     energy_coordinator: ThemoEnergyCoordinator
+    heating_trackers: dict[int, DailyHeatingTracker]
 
 
 type ThemoConfigEntry = ConfigEntry[ThemoRuntimeData]
@@ -57,10 +61,41 @@ async def async_setup_entry(hass: HomeAssistant, entry: ThemoConfigEntry) -> boo
     # validated by the state coordinator's first refresh above.
     await energy_coordinator.async_refresh()
 
+    # Daily heating-time trackers (one per device), persisted across restarts.
+    store: Store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
+    stored = await store.async_load() or {}
+    trackers: dict[int, DailyHeatingTracker] = {}
+    for device in state_coordinator.data.values():
+        saved = stored.get(str(device.id))
+        trackers[device.id] = (
+            DailyHeatingTracker.from_storage(saved) if saved else DailyHeatingTracker()
+        )
+
+    @callback
+    def _update_trackers() -> None:
+        now = dt_util.utcnow()
+        today = dt_util.now().date()
+        for dev in state_coordinator.data.values():
+            if dev.state is None:
+                continue
+            trackers[dev.id].update(now, dev.state.load_state == 1, today)
+        store.async_delay_save(
+            lambda: {str(k): t.to_storage() for k, t in trackers.items()}, 30
+        )
+
+    entry.async_on_unload(state_coordinator.async_add_listener(_update_trackers))
+    _update_trackers()  # seed an initial sample so values start moving
+
+    async def _flush_trackers() -> None:
+        await store.async_save({str(k): t.to_storage() for k, t in trackers.items()})
+
+    entry.async_on_unload(_flush_trackers)
+
     entry.runtime_data = ThemoRuntimeData(
         client=client,
         state_coordinator=state_coordinator,
         energy_coordinator=energy_coordinator,
+        heating_trackers=trackers,
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
