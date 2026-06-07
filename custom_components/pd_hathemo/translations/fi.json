@@ -29,7 +29,7 @@
             "room_temperature": {"name": "Huonelampotila"},
             "floor_temperature": {"name": "Lattialampotila"},
             "outside_temperature": {"name": "Ulkolampotila"},
-            "heating_today_running": {"name": "Lammitys tanaan (live)"},
+            "heating_today_running": {"name": "Lammitys tanaan (hetkellinen)"},
             "heating_today_total": {"name": "Lammitys tanaan"}
         },
         "light": {

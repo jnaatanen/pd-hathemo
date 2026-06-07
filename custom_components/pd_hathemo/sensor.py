@@ -128,6 +128,15 @@ class ThemoHeatingTodayRunningSensor(ThemoBaseEntity, SensorEntity):
         self._attr_unique_id = f"{device.id}_heating_today_running"
 
     @property
+    def available(self) -> bool:
+        # Value comes from accumulated time, not the live state, so stay available
+        # through transient polls that return no state.
+        return (
+            self.coordinator.last_update_success
+            and self._device_id in self.coordinator.data
+        )
+
+    @property
     def native_value(self) -> float | None:
         tracker = self._trackers.get(self._device_id)
         if tracker is None:
@@ -154,6 +163,15 @@ class ThemoHeatingTodayCumulativeSensor(ThemoBaseEntity, SensorEntity):
         super().__init__(coordinator, device)
         self._trackers = trackers
         self._attr_unique_id = f"{device.id}_heating_today_total"
+
+    @property
+    def available(self) -> bool:
+        # Value comes from accumulated time, not the live state, so stay available
+        # through transient polls that return no state.
+        return (
+            self.coordinator.last_update_success
+            and self._device_id in self.coordinator.data
+        )
 
     @property
     def native_value(self) -> float | None:
