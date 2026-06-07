@@ -34,6 +34,9 @@
         },
         "light": {
             "backlight": {"name": "Taustavalo"}
+        },
+        "binary_sensor": {
+            "heating": {"name": "Lammitys"}
         }
     }
 }
