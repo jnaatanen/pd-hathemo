@@ -83,6 +83,12 @@ Possible future additions (not yet implemented):
   as a climate `preset_mode`, so schedules can be switched directly from Home Assistant.
   (Themo allows one active schedule per parameter, which the implementation would need to
   account for.)
+- **Heating activity ("heating now")** — Each thermostat reports whether its heating
+  element is currently on or off. A future version could expose this as a `binary_sensor`
+  per room, from which Home Assistant's History Stats can show how much of the day each
+  room has been heating. (Because the element is simply on/off, an accurate daily
+  duty-cycle can also be derived from the already-imported hourly energy divided by the
+  element's rated power.)
 
 ## License
 
