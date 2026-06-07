@@ -48,6 +48,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ThemoConfigEntry) -> boo
     await state_coordinator.async_config_entry_first_refresh()
 
     energy_coordinator = ThemoEnergyCoordinator(hass, client, state_coordinator)
+    # This coordinator has no entities. A DataUpdateCoordinator only schedules its
+    # periodic refresh while it has at least one listener, so register a permanent
+    # no-op listener to keep the ENERGY_SCAN_INTERVAL polling alive. Without it the
+    # energy import would only run at setup/reload.
+    entry.async_on_unload(energy_coordinator.async_add_listener(lambda: None))
     # Non-blocking: an energy import failure must not block setup. Auth is already
     # validated by the state coordinator's first refresh above.
     await energy_coordinator.async_refresh()
