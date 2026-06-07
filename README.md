@@ -23,6 +23,11 @@ entirely at your own risk. See [LICENSE](LICENSE) for the full terms.
 - **Sensors**: room temperature, floor temperature (only when the device has a floor sensor),
   and outside temperature.
 - **Light**: thermostat backlight on/off.
+- **Heating activity**: a binary sensor per thermostat showing whether the heating element is
+  on right now.
+- **Daily heating %**: two sensors per thermostat — a **running** share of the elapsed day and
+  a **cumulative** share of the full 24 h — both reset at local midnight. Computed directly
+  from on/off time, independent of the configured element power.
 - **Energy**: hourly consumption imported as Home Assistant long-term statistics (with up to
   14 days of backfill), one per thermostat, for the Energy dashboard.
 
@@ -67,6 +72,17 @@ After setup, each thermostat reports hourly consumption as a long-term statistic
 Up to 14 days of history is backfilled on first run; the Energy dashboard may take a couple
 of hours to render newly added sources.
 
+## Heating activity
+
+Each thermostat exposes a `<room> Heating` binary sensor (on while the element is heating)
+and two daily percentage sensors (running and cumulative) that **reset at local midnight**.
+
+The percentage sensors cover the current day only. For longer periods — e.g. weekly or
+monthly heating time — add a Home Assistant **History Stats** helper on the
+`<room> Heating` binary sensor with your chosen start/end and `type: time` (hours on) or
+`type: ratio` (percentage). The binary sensor is the source of truth; build whatever
+longer-term meter or sensor best fits your needs on top of it.
+
 ## Notes
 
 - The integration is **cloud polling**: device state is read every ~2 minutes and energy
@@ -83,15 +99,6 @@ Possible future additions (not yet implemented):
   as a climate `preset_mode`, so schedules can be switched directly from Home Assistant.
   (Themo allows one active schedule per parameter, which the implementation would need to
   account for.)
-- **Heating activity ("heating now")** — Each thermostat reports whether its heating
-  element is currently on or off. A future version could expose this as a `binary_sensor`
-  per room.
-- **Daily heating %** — Derived from that `binary_sensor` via History Stats (`type: ratio`),
-  in two complementary views: a **running** figure over the elapsed day so far (how hard a
-  room has been heated up to now — meaningful because the system is predictive), and a
-  **cumulative** figure against the full 24 h. Both update through the day and converge to
-  the same value at midnight. Measured directly from on/off time, so independent of the
-  configured element power.
 
 ## License
 
