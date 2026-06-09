@@ -10,12 +10,13 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from .api import ThemoApiClient, ThemoAuthError, ThemoConnectionError, ThemoDevice
+from .api import ThemoApiClient, ThemoAuthError, ThemoConnectionError, ThemoDevice, ThemoSchedule
 from .const import (
     DOMAIN,
     ENERGY_BACKFILL_DAYS,
     ENERGY_INCREMENTAL_DAYS,
     ENERGY_SCAN_INTERVAL,
+    SCHEDULE_SCAN_INTERVAL,
     STATE_SCAN_INTERVAL,
 )
 from .statistics import async_import_device_energy
@@ -93,3 +94,35 @@ class ThemoEnergyCoordinator(DataUpdateCoordinator[None]):
                     "Energy update failed for %s: %s", device.name, err
                 )
         return None
+
+
+class ThemoScheduleCoordinator(DataUpdateCoordinator[dict[int, list[ThemoSchedule]]]):
+    """Fetches each device's schedule list (no setpoints) at a low frequency."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        client: ThemoApiClient,
+        state_coordinator: ThemoStateCoordinator,
+    ) -> None:
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=f"{DOMAIN} schedules",
+            update_interval=SCHEDULE_SCAN_INTERVAL,
+        )
+        self.client = client
+        self._state_coordinator = state_coordinator
+
+    async def _async_update_data(self) -> dict[int, list[ThemoSchedule]]:
+        result: dict[int, list[ThemoSchedule]] = {}
+        try:
+            for device in (self._state_coordinator.data or {}).values():
+                result[device.id] = await self.client.get_device_schedules(
+                    device.environment_id, device.id
+                )
+        except ThemoAuthError as err:
+            raise ConfigEntryAuthFailed(str(err)) from err
+        except ThemoConnectionError as err:
+            raise UpdateFailed(str(err)) from err
+        return result
