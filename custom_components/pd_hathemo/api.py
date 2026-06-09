@@ -91,6 +91,27 @@ class ThemoDevice:
         )
 
 
+@dataclass
+class ThemoSchedule:
+    """A device schedule (list view, without setpoints)."""
+
+    id: int
+    name: str
+    parameter: str
+    active: bool
+    unit: str | None
+
+    @classmethod
+    def from_json(cls, data: dict[str, Any]) -> "ThemoSchedule":
+        return cls(
+            id=int(data["Id"]),
+            name=data.get("Name") or "",
+            parameter=data.get("Parameter") or "",
+            active=bool(data.get("Active")),
+            unit=data.get("Unit"),
+        )
+
+
 def _parse_model(tags: str | None) -> str:
     """Pick a model token (e.g. T700) from the pipe-delimited Tags field."""
     if tags:
@@ -219,4 +240,33 @@ class ThemoApiClient:
             "POST",
             f"api/environments/{environment_id}/devices/{device_id}/commands/message",
             json=body,
+        )
+
+    async def get_device_schedules(
+        self, environment_id: int, device_id: int
+    ) -> list[ThemoSchedule]:
+        raw = await self._request(
+            "GET",
+            f"api/environments/{environment_id}/devices/{device_id}/schedules",
+        )
+        return [ThemoSchedule.from_json(s) for s in (raw or [])]
+
+    async def get_schedule(
+        self, environment_id: int, device_id: int, schedule_id: int
+    ) -> dict[str, Any]:
+        return (
+            await self._request(
+                "GET",
+                f"api/environments/{environment_id}/devices/{device_id}/schedules/{schedule_id}",
+            )
+            or {}
+        )
+
+    async def activate_schedule(
+        self, environment_id: int, device_id: int, schedule_id: int, name: str
+    ) -> None:
+        await self._request(
+            "PUT",
+            f"api/environments/{environment_id}/devices/{device_id}/schedules/{schedule_id}",
+            json={"Name": name, "Active": True},
         )

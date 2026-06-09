@@ -25,3 +25,7 @@ MODE_SLS = "SLS"
 STORAGE_KEY = "pd_hathemo_heating"
 STORAGE_VERSION = 1
 SECONDS_PER_DAY = 86400
+
+SCHEDULE_SCAN_INTERVAL = timedelta(minutes=15)
+PARAM_MIN_TEMPERATURE = "MinTemperature"
+PARAM_MAX_TEMPERATURE = "MaxTemperature"
