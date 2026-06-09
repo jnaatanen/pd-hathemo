@@ -93,6 +93,10 @@ Each thermostat's named heating schedules (the `MinTemperature` programs, e.g. "
 `climate.set_preset_mode` from an automation — to activate that schedule. Activating one
 schedule deactivates the previously active one.
 
+A companion Lovelace card, [pd-themo-card](https://github.com/jnaatanen/pd-themo-card), pairs
+with this integration to display thermostats and their schedules. Build it with the
+read-only websocket command below.
+
 For custom cards, a read-only websocket command returns the full weekly setpoint grid:
 
 ```js
