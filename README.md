@@ -20,6 +20,9 @@ entirely at your own risk. See [LICENSE](LICENSE) for the full terms.
 
 - **Climate** per thermostat: Off / Heat (Manual) / Auto (schedule) modes, target temperature,
   current temperature, and heating action.
+- **Schedules**: switch the active heating schedule per thermostat from the climate **preset**
+  selector ("Home" / "Away" etc.). A read-only websocket command exposes the full weekly
+  setpoint grid for custom cards.
 - **Sensors**: room temperature, floor temperature (only when the device has a floor sensor),
   and outside temperature.
 - **Light**: thermostat backlight on/off.
@@ -83,10 +86,28 @@ monthly heating time — add a Home Assistant **History Stats** helper on the
 `type: ratio` (percentage). The binary sensor is the source of truth; build whatever
 longer-term meter or sensor best fits your needs on top of it.
 
+## Schedules
+
+Each thermostat's named heating schedules (the `MinTemperature` programs, e.g. "Home" /
+"Away") are exposed as climate **presets**. Select a preset on the climate entity — or call
+`climate.set_preset_mode` from an automation — to activate that schedule. Activating one
+schedule deactivates the previously active one.
+
+For custom cards, a read-only websocket command returns the full weekly setpoint grid:
+
+```js
+const result = await hass.connection.sendMessagePromise({
+  type: "pd_hathemo/schedules",
+  device_id: 28920,        // the Themo device id
+});
+// result.schedules: [{ id, name, parameter, unit, active,
+//   setpoints: [{ day, hour, value }, ...] }]   // day 0=Sun..6=Sat, hour 0-23, value in C
+```
+
 ## Notes
 
-- The integration is **cloud polling**: device state is read every ~2 minutes and energy
-  statistics are imported every ~10 minutes.
+- The integration is **cloud polling**: device state is read every ~2 minutes, energy
+  statistics every ~10 minutes, and schedules every ~15 minutes.
 - Control commands (temperature, mode, backlight) are applied **optimistically** because the
   Themo cloud reflects commanded state with a delay.
 
@@ -94,11 +115,9 @@ longer-term meter or sensor best fits your needs on top of it.
 
 Possible future additions (not yet implemented):
 
-- **Schedule switching** — Themo supports multiple named heating schedules per
-  thermostat (e.g. "Home", "Away"). A future version could expose the active schedule
-  as a climate `preset_mode`, so schedules can be switched directly from Home Assistant.
-  (Themo allows one active schedule per parameter, which the implementation would need to
-  account for.)
+- **Schedule setpoint editing** — the integration currently lets you switch the active
+  schedule; editing the weekly setpoints (the `Day/Hour/Value` grid) from Home Assistant or a
+  card is a possible future addition.
 
 ## License
 
