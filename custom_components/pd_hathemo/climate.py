@@ -117,7 +117,7 @@ class ThemoClimate(ThemoBaseEntity, ClimateEntity):
             | ClimateEntityFeature.TURN_OFF
             | ClimateEntityFeature.PRESET_MODE
         )
-        if self.hvac_mode is HVACMode.HEAT:
+        if self.hvac_mode == HVACMode.HEAT:
             features |= ClimateEntityFeature.TARGET_TEMPERATURE
         return features
 
