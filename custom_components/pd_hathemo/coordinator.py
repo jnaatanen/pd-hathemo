@@ -97,7 +97,11 @@ class ThemoEnergyCoordinator(DataUpdateCoordinator[None]):
 
 
 class ThemoScheduleCoordinator(DataUpdateCoordinator[dict[int, list[ThemoSchedule]]]):
-    """Fetches each device's schedule list (no setpoints) at a low frequency."""
+    """Fetches each device's schedule list (no setpoints) at a low frequency.
+
+    Any per-device fetch failure aborts the whole update (a partial dict would be
+    inconsistent) -- unlike the energy coordinator, which continues per device.
+    """
 
     def __init__(
         self,
