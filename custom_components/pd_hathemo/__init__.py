@@ -10,12 +10,18 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.helpers.storage import Store
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util
 
 from .api import ThemoApiClient, ThemoAuthError, ThemoConnectionError
 from .const import PLATFORMS, STORAGE_KEY, STORAGE_VERSION
-from .coordinator import ThemoEnergyCoordinator, ThemoStateCoordinator
+from .coordinator import (
+    ThemoEnergyCoordinator,
+    ThemoScheduleCoordinator,
+    ThemoStateCoordinator,
+)
 from .heating import DailyHeatingTracker
+from .websocket import async_register_websocket_commands
 
 
 @dataclass
@@ -26,9 +32,16 @@ class ThemoRuntimeData:
     state_coordinator: ThemoStateCoordinator
     energy_coordinator: ThemoEnergyCoordinator
     heating_trackers: dict[int, DailyHeatingTracker]
+    schedule_coordinator: ThemoScheduleCoordinator
 
 
 type ThemoConfigEntry = ConfigEntry[ThemoRuntimeData]
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register integration-wide websocket commands."""
+    async_register_websocket_commands(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ThemoConfigEntry) -> bool:
@@ -94,11 +107,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ThemoConfigEntry) -> boo
 
     entry.async_on_unload(_flush_trackers)
 
+    schedule_coordinator = ThemoScheduleCoordinator(hass, client, state_coordinator)
+    # Schedules are non-critical; a failure must not block setup.
+    await schedule_coordinator.async_refresh()
+
     entry.runtime_data = ThemoRuntimeData(
         client=client,
         state_coordinator=state_coordinator,
         energy_coordinator=energy_coordinator,
         heating_trackers=trackers,
+        schedule_coordinator=schedule_coordinator,
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
