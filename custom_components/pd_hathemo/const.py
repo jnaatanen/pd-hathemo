@@ -15,6 +15,7 @@ PLATFORMS = [
     Platform.LIGHT,
     Platform.BINARY_SENSOR,
     Platform.SWITCH,
+    Platform.NUMBER,
 ]
 
 STATE_SCAN_INTERVAL = timedelta(minutes=2)
@@ -35,3 +36,5 @@ SECONDS_PER_DAY = 86400
 SCHEDULE_SCAN_INTERVAL = timedelta(minutes=15)
 PARAM_MIN_TEMPERATURE = "MinTemperature"
 PARAM_MAX_TEMPERATURE = "MaxTemperature"
+
+SETTINGS_SCAN_INTERVAL = timedelta(minutes=15)

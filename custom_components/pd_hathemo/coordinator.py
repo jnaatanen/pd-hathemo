@@ -17,6 +17,7 @@ from .const import (
     ENERGY_INCREMENTAL_DAYS,
     ENERGY_SCAN_INTERVAL,
     SCHEDULE_SCAN_INTERVAL,
+    SETTINGS_SCAN_INTERVAL,
     STATE_SCAN_INTERVAL,
 )
 from .statistics import async_import_device_energy
@@ -123,6 +124,41 @@ class ThemoScheduleCoordinator(DataUpdateCoordinator[dict[int, list[ThemoSchedul
         try:
             for device in (self._state_coordinator.data or {}).values():
                 result[device.id] = await self.client.get_device_schedules(
+                    device.environment_id, device.id
+                )
+        except ThemoAuthError as err:
+            raise ConfigEntryAuthFailed(str(err)) from err
+        except ThemoConnectionError as err:
+            raise UpdateFailed(str(err)) from err
+        return result
+
+
+class ThemoSettingsCoordinator(DataUpdateCoordinator[dict[int, float | None]]):
+    """Fetches each device's price limit (EUR/MWh) at a low frequency.
+
+    As with schedules, any per-device failure aborts the whole update.
+    """
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        client: ThemoApiClient,
+        state_coordinator: ThemoStateCoordinator,
+    ) -> None:
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=f"{DOMAIN} settings",
+            update_interval=SETTINGS_SCAN_INTERVAL,
+        )
+        self.client = client
+        self._state_coordinator = state_coordinator
+
+    async def _async_update_data(self) -> dict[int, float | None]:
+        result: dict[int, float | None] = {}
+        try:
+            for device in (self._state_coordinator.data or {}).values():
+                result[device.id] = await self.client.get_limit_price(
                     device.environment_id, device.id
                 )
         except ThemoAuthError as err:

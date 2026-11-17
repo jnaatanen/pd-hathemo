@@ -18,6 +18,7 @@ from .const import PLATFORMS, STORAGE_KEY, STORAGE_VERSION
 from .coordinator import (
     ThemoEnergyCoordinator,
     ThemoScheduleCoordinator,
+    ThemoSettingsCoordinator,
     ThemoStateCoordinator,
 )
 from .heating import DailyHeatingTracker
@@ -33,6 +34,7 @@ class ThemoRuntimeData:
     energy_coordinator: ThemoEnergyCoordinator
     heating_trackers: dict[int, DailyHeatingTracker]
     schedule_coordinator: ThemoScheduleCoordinator
+    settings_coordinator: ThemoSettingsCoordinator
 
 
 type ThemoConfigEntry = ConfigEntry[ThemoRuntimeData]
@@ -111,12 +113,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ThemoConfigEntry) -> boo
     # Schedules are non-critical; a failure must not block setup.
     await schedule_coordinator.async_refresh()
 
+    settings_coordinator = ThemoSettingsCoordinator(hass, client, state_coordinator)
+    # Settings (price limit) are non-critical too.
+    await settings_coordinator.async_refresh()
+
     entry.runtime_data = ThemoRuntimeData(
         client=client,
         state_coordinator=state_coordinator,
         energy_coordinator=energy_coordinator,
         heating_trackers=trackers,
         schedule_coordinator=schedule_coordinator,
+        settings_coordinator=settings_coordinator,
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

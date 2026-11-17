@@ -27,6 +27,8 @@ entirely at your own risk. See [LICENSE](LICENSE) for the full terms.
   and outside temperature.
 - **Light**: thermostat backlight on/off.
 - **Child lock**: a switch per thermostat that locks or unlocks the device buttons.
+- **Price limit**: a number per thermostat for Themo's electricity price limit, shown in
+  c/kWh. Themo's schedule optimization does not heat during hours priced above it.
 - **Connection**: a diagnostic binary sensor per thermostat showing whether the device is
   connected to the Themo cloud.
 - **Heating activity**: a binary sensor per thermostat showing whether the heating element is
@@ -65,7 +67,8 @@ entirely at your own risk. See [LICENSE](LICENSE) for the full terms.
 3. Enter your Themo account email and password.
 
 Each thermostat is added as a device with a climate entity, temperature sensors, a
-backlight light, a child lock switch, and heating and connection binary sensors.
+backlight light, a child lock switch, a price limit number, and heating and connection
+binary sensors.
 
 ## Energy dashboard
 
@@ -114,11 +117,13 @@ const result = await hass.connection.sendMessagePromise({
 ## Notes
 
 - The integration is **cloud polling**: device state is read every ~2 minutes, energy
-  statistics every ~10 minutes, and schedules every ~15 minutes.
+  statistics every ~10 minutes, and schedules and the price limit every ~15 minutes.
 - Control commands (temperature, mode, backlight, child lock) are applied **optimistically**
   because the Themo cloud reflects commanded state with a delay.
 - The child lock switch is on for both the normal lock and the device's "hard lock"; turning
   it on from Home Assistant sets the normal lock.
+- The price limit is stored by Themo in EUR/MWh; the integration converts it to c/kWh
+  (1 c/kWh = 10 EUR/MWh). A change made in the Themo app shows up within ~15 minutes.
 
 ## Roadmap
 
@@ -127,6 +132,8 @@ Possible future additions (not yet implemented):
 - **Schedule setpoint editing** — the integration currently lets you switch the active
   schedule; editing the weekly setpoints (the `Day/Hour/Value` grid) from Home Assistant or a
   card is a possible future addition.
+- **Boost timer** — the API has a manual-mode timer (`CManTimer`) that could back a timed
+  boost; its behaviour is undocumented and still needs to be verified on a device.
 
 ## License
 

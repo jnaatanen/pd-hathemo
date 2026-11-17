@@ -14,6 +14,9 @@ from .const import API_VERSION, BASE_URL, REQUEST_TIMEOUT
 
 _LOGGER = logging.getLogger(__name__)
 
+SETTINGS_CATEGORY_GENERAL = "GeneralDeviceSettings"
+SETTING_LIMIT_PRICE = "LimitPrice"
+
 
 class ThemoError(Exception):
     """Base error for the Themo client."""
@@ -174,7 +177,7 @@ class ThemoApiClient:
         path: str,
         *,
         params: dict[str, Any] | None = None,
-        json: dict[str, Any] | None = None,
+        json: dict[str, Any] | list[Any] | None = None,
         allow_reauth: bool = True,
     ) -> Any:
         full_params = dict(params or {})
@@ -265,6 +268,43 @@ class ThemoApiClient:
                 f"api/environments/{environment_id}/devices/{device_id}/schedules/{schedule_id}",
             )
             or {}
+        )
+
+    async def get_limit_price(
+        self, environment_id: int, device_id: int
+    ) -> float | None:
+        """Return the device's price limit in EUR/MWh, or None when not set."""
+        raw = await self._request(
+            "GET",
+            f"api/environments/{environment_id}/devices/{device_id}/settings",
+        )
+        for category in raw or []:
+            if category.get("CategoryName") != SETTINGS_CATEGORY_GENERAL:
+                continue
+            for setting in category.get("Settings") or []:
+                if setting.get("Key") != SETTING_LIMIT_PRICE:
+                    continue
+                try:
+                    return float(setting.get("Value"))
+                except (TypeError, ValueError):
+                    return None
+        return None
+
+    async def set_limit_price(
+        self, environment_id: int, device_id: int, value: float
+    ) -> None:
+        """Set the device's price limit (EUR/MWh)."""
+        await self._request(
+            "POST",
+            f"api/environments/{environment_id}/devices/{device_id}/settings",
+            json=[
+                {
+                    "CategoryName": SETTINGS_CATEGORY_GENERAL,
+                    "Settings": [
+                        {"Key": SETTING_LIMIT_PRICE, "Value": format(value, "g")}
+                    ],
+                }
+            ],
         )
 
     async def activate_schedule(

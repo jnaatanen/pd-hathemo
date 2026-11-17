@@ -41,6 +41,9 @@
         },
         "switch": {
             "child_lock": {"name": "Child lock"}
+        },
+        "number": {
+            "price_limit": {"name": "Price limit"}
         }
     }
 }

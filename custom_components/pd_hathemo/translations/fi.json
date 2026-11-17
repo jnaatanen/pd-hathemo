@@ -41,6 +41,9 @@
         },
         "switch": {
             "child_lock": {"name": "Lapsilukko"}
+        },
+        "number": {
+            "price_limit": {"name": "Hintaraja"}
         }
     }
 }
