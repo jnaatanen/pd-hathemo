@@ -26,6 +26,9 @@ entirely at your own risk. See [LICENSE](LICENSE) for the full terms.
 - **Sensors**: room temperature, floor temperature (only when the device has a floor sensor),
   and outside temperature.
 - **Light**: thermostat backlight on/off.
+- **Child lock**: a switch per thermostat that locks or unlocks the device buttons.
+- **Connection**: a diagnostic binary sensor per thermostat showing whether the device is
+  connected to the Themo cloud.
 - **Heating activity**: a binary sensor per thermostat showing whether the heating element is
   on right now.
 - **Daily heating %**: two sensors per thermostat — a **running** share of the elapsed day and
@@ -36,7 +39,7 @@ entirely at your own risk. See [LICENSE](LICENSE) for the full terms.
 
 ## Requirements
 
-- Home Assistant 2025.1.0 or newer.
+- Home Assistant 2025.11.0 or newer.
 - A Themo account (the same email and password you use in the Themo app).
 
 ## Installation
@@ -61,8 +64,8 @@ entirely at your own risk. See [LICENSE](LICENSE) for the full terms.
 2. Search for **Themo** and select it.
 3. Enter your Themo account email and password.
 
-Each thermostat is added as a device with a climate entity, temperature sensors, and a
-backlight light.
+Each thermostat is added as a device with a climate entity, temperature sensors, a
+backlight light, a child lock switch, and heating and connection binary sensors.
 
 ## Energy dashboard
 
@@ -112,8 +115,10 @@ const result = await hass.connection.sendMessagePromise({
 
 - The integration is **cloud polling**: device state is read every ~2 minutes, energy
   statistics every ~10 minutes, and schedules every ~15 minutes.
-- Control commands (temperature, mode, backlight) are applied **optimistically** because the
-  Themo cloud reflects commanded state with a delay.
+- Control commands (temperature, mode, backlight, child lock) are applied **optimistically**
+  because the Themo cloud reflects commanded state with a delay.
+- The child lock switch is on for both the normal lock and the device's "hard lock"; turning
+  it on from Home Assistant sets the normal lock.
 
 ## Roadmap
 

@@ -36,7 +36,11 @@
             "backlight": {"name": "Backlight"}
         },
         "binary_sensor": {
-            "heating": {"name": "Heating"}
+            "heating": {"name": "Heating"},
+            "connectivity": {"name": "Connection"}
+        },
+        "switch": {
+            "child_lock": {"name": "Child lock"}
         }
     }
 }

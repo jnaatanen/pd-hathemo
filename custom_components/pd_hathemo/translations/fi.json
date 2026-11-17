@@ -36,7 +36,11 @@
             "backlight": {"name": "Taustavalo"}
         },
         "binary_sensor": {
-            "heating": {"name": "Lammitys"}
+            "heating": {"name": "Lammitys"},
+            "connectivity": {"name": "Yhteys"}
+        },
+        "switch": {
+            "child_lock": {"name": "Lapsilukko"}
         }
     }
 }

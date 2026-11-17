@@ -44,6 +44,9 @@ class DeviceState:
     is_floor: bool
     is_combi: bool
     is_price_switch: bool
+    # 0 = off, 1 = child lock, 2 = hard lock, 3 = manual-mode timer boost
+    lock: int | None = None
+    connected: bool | None = None
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> "DeviceState":
@@ -62,6 +65,8 @@ class DeviceState:
             is_floor=bool(params.get("IsFloor")),
             is_combi=bool(params.get("IsCombi")),
             is_price_switch=bool(params.get("IsPriceSwitch")),
+            lock=data.get("Lock"),
+            connected=data.get("CS"),
         )
 
 

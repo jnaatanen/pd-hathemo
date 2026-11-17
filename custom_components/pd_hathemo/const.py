@@ -9,7 +9,13 @@ BASE_URL = "https://connect.themo.io"
 API_VERSION = "2.1"
 REQUEST_TIMEOUT = 30
 
-PLATFORMS = [Platform.CLIMATE, Platform.SENSOR, Platform.LIGHT, Platform.BINARY_SENSOR]
+PLATFORMS = [
+    Platform.CLIMATE,
+    Platform.SENSOR,
+    Platform.LIGHT,
+    Platform.BINARY_SENSOR,
+    Platform.SWITCH,
+]
 
 STATE_SCAN_INTERVAL = timedelta(minutes=2)
 ENERGY_SCAN_INTERVAL = timedelta(minutes=10)
