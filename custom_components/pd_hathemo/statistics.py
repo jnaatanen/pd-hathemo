@@ -7,7 +7,11 @@ import logging
 from typing import Any
 
 from homeassistant.components.recorder import get_instance
-from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
+from homeassistant.components.recorder.models import (
+    StatisticData,
+    StatisticMeanType,
+    StatisticMetaData,
+)
 from homeassistant.components.recorder.statistics import (
     async_add_external_statistics,
     get_last_statistics,
@@ -24,6 +28,7 @@ _LOGGER = logging.getLogger(__name__)
 ENERGY_SERIES_NAME = "Price data"
 ENERGY_COLUMN_NAME = "Consumption"
 MWH_TO_KWH = 1000.0
+ENERGY_UNIT_CLASS = "energy"  # recorder unit-conversion class for kWh
 
 
 def statistic_id_for(device: ThemoDevice) -> str:
@@ -102,12 +107,15 @@ async def async_import_device_energy(
     if not stats:
         return
 
+    # mean_type and unit_class must be explicit: Home Assistant 2026.11 no longer
+    # infers them for custom integrations.
     metadata = StatisticMetaData(
-        has_mean=False,
+        mean_type=StatisticMeanType.NONE,
         has_sum=True,
         name=f"{device.name} energy",
         source=DOMAIN,
         statistic_id=statistic_id,
+        unit_class=ENERGY_UNIT_CLASS,
         unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
     )
     async_add_external_statistics(hass, metadata, stats)
