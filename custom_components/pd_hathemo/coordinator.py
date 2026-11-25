@@ -16,10 +16,12 @@ from .const import (
     ENERGY_BACKFILL_DAYS,
     ENERGY_INCREMENTAL_DAYS,
     ENERGY_SCAN_INTERVAL,
+    PARAM_MIN_TEMPERATURE,
     SCHEDULE_SCAN_INTERVAL,
     SETTINGS_SCAN_INTERVAL,
     STATE_SCAN_INTERVAL,
 )
+from .schedule import grid_from_setpoints
 from .statistics import async_import_device_energy
 
 _LOGGER = logging.getLogger(__name__)
@@ -98,7 +100,9 @@ class ThemoEnergyCoordinator(DataUpdateCoordinator[None]):
 
 
 class ThemoScheduleCoordinator(DataUpdateCoordinator[dict[int, list[ThemoSchedule]]]):
-    """Fetches each device's schedule list (no setpoints) at a low frequency.
+    """Fetches each device's schedule list at a low frequency.
+
+    The hourly setpoint grid is loaded only for the active MinTemperature schedule.
 
     Any per-device fetch failure aborts the whole update (a partial dict would be
     inconsistent) -- unlike the energy coordinator, which continues per device.
@@ -123,9 +127,18 @@ class ThemoScheduleCoordinator(DataUpdateCoordinator[dict[int, list[ThemoSchedul
         result: dict[int, list[ThemoSchedule]] = {}
         try:
             for device in (self._state_coordinator.data or {}).values():
-                result[device.id] = await self.client.get_device_schedules(
+                schedules = await self.client.get_device_schedules(
                     device.environment_id, device.id
                 )
+                for schedule in schedules:
+                    if schedule.active and schedule.parameter == PARAM_MIN_TEMPERATURE:
+                        full = await self.client.get_schedule(
+                            device.environment_id, device.id, schedule.id
+                        )
+                        schedule.setpoints = grid_from_setpoints(
+                            full.get("Setpoints")
+                        )
+                result[device.id] = schedules
         except ThemoAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except ThemoConnectionError as err:

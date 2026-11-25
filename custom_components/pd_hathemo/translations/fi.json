@@ -30,7 +30,9 @@
             "floor_temperature": {"name": "Lattialampotila"},
             "outside_temperature": {"name": "Ulkolampotila"},
             "heating_today_running": {"name": "Lammitys tanaan (hetkellinen)"},
-            "heating_today_total": {"name": "Lammitys tanaan"}
+            "heating_today_total": {"name": "Lammitys tanaan"},
+            "schedule_temperature": {"name": "Aikataulun lampotila"},
+            "schedule_next_change": {"name": "Aikataulun seuraava muutos"}
         },
         "light": {
             "backlight": {"name": "Taustavalo"}

@@ -23,6 +23,9 @@ entirely at your own risk. See [LICENSE](LICENSE) for the full terms.
 - **Schedules**: switch the active heating schedule per thermostat from the climate **preset**
   selector ("Home" / "Away" etc.). A read-only websocket command exposes the full weekly
   setpoint grid for custom cards.
+- **Schedule sensors**: per thermostat, the active schedule's **scheduled temperature** for
+  the current hour and the time of the **next schedule change**, with the upcoming changes
+  for the next 48 hours as an attribute (for dashboards, automations and forecasts).
 - **Sensors**: room temperature, floor temperature (only when the device has a floor sensor),
   and outside temperature.
 - **Light**: thermostat backlight on/off.
@@ -99,6 +102,17 @@ Each thermostat's named heating schedules (the `MinTemperature` programs, e.g. "
 `climate.set_preset_mode` from an automation — to activate that schedule. Activating one
 schedule deactivates the previously active one.
 
+Two sensors per thermostat expose the active schedule's content:
+
+- `<room> Scheduled temperature` — the setpoint for the current hour. Attributes: `schedule`
+  (the active schedule's name) and `upcoming`, a list of `{start, temperature}` changes for
+  the next 48 hours.
+- `<room> Next schedule change` — a timestamp of the next setpoint change, with the new
+  value in the `temperature` attribute. Unknown when the schedule is the same all week.
+
+Both follow the active schedule even when the thermostat is in Off or Heat (manual) mode,
+where the schedule is not in effect.
+
 A companion Lovelace card, [pd-themo-card](https://github.com/jnaatanen/pd-themo-card), pairs
 with this integration to display thermostats and their schedules. Build it with the
 read-only websocket command below.
@@ -122,6 +136,8 @@ const result = await hass.connection.sendMessagePromise({
   because the Themo cloud reflects commanded state with a delay.
 - The child lock switch is on for both the normal lock and the device's "hard lock"; turning
   it on from Home Assistant sets the normal lock.
+- Schedule hours are read in Home Assistant's time zone, which is assumed to be the same as
+  the thermostats'.
 - The price limit is stored by Themo in EUR/MWh; the integration converts it to c/kWh
   (1 c/kWh = 10 EUR/MWh). A change made in the Themo app shows up within ~15 minutes.
 

@@ -101,13 +101,15 @@ class ThemoDevice:
 
 @dataclass
 class ThemoSchedule:
-    """A device schedule (list view, without setpoints)."""
+    """A device schedule; the list view carries no setpoints."""
 
     id: int
     name: str
     parameter: str
     active: bool
     unit: str | None
+    # (day 0=Sun..6=Sat, hour) -> setpoint; loaded only for the active schedule.
+    setpoints: dict[tuple[int, int], float] | None = None
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> "ThemoSchedule":

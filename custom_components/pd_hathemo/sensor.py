@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -17,11 +19,14 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import ThemoConfigEntry
-from .api import DeviceState, ThemoDevice
-from .const import SECONDS_PER_DAY
-from .coordinator import ThemoStateCoordinator
+from .api import DeviceState, ThemoDevice, ThemoSchedule
+from .const import PARAM_MIN_TEMPERATURE, SECONDS_PER_DAY
+from .coordinator import ThemoScheduleCoordinator, ThemoStateCoordinator
 from .entity import ThemoBaseEntity
 from .heating import DailyHeatingTracker
+from .schedule import next_change, setpoint_at, upcoming_changes
+
+SCHEDULE_UPCOMING_HOURS = 48
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -80,11 +85,14 @@ async def async_setup_entry(
 ) -> None:
     coordinator = entry.runtime_data.state_coordinator
     trackers = entry.runtime_data.heating_trackers
+    schedules = entry.runtime_data.schedule_coordinator
     entities: list[SensorEntity] = []
     for device in coordinator.data.values():
         entities.extend(build_sensors(coordinator, device))
         entities.append(ThemoHeatingTodayRunningSensor(coordinator, device, trackers))
         entities.append(ThemoHeatingTodayCumulativeSensor(coordinator, device, trackers))
+        entities.append(ThemoScheduleTemperatureSensor(coordinator, device, schedules))
+        entities.append(ThemoScheduleNextChangeSensor(coordinator, device, schedules))
     async_add_entities(entities)
 
 
@@ -179,3 +187,110 @@ class ThemoHeatingTodayCumulativeSensor(ThemoBaseEntity, SensorEntity):
         if tracker is None:
             return None
         return round(tracker.on_seconds / SECONDS_PER_DAY * 100, 1)
+
+
+class _ThemoScheduleSensor(ThemoBaseEntity, SensorEntity):
+    """Base for sensors derived from the active MinTemperature schedule.
+
+    Schedule hours are wall-clock hours, read here in Home Assistant's time zone.
+    """
+
+    def __init__(
+        self,
+        coordinator: ThemoStateCoordinator,
+        device: ThemoDevice,
+        schedule_coordinator: ThemoScheduleCoordinator,
+    ) -> None:
+        super().__init__(coordinator, device)
+        self._schedule_coordinator = schedule_coordinator
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            self._schedule_coordinator.async_add_listener(self.async_write_ha_state)
+        )
+
+    def _active_schedule(self) -> ThemoSchedule | None:
+        data = self._schedule_coordinator.data or {}
+        for schedule in data.get(self._device_id, []):
+            if (
+                schedule.active
+                and schedule.parameter == PARAM_MIN_TEMPERATURE
+                and schedule.setpoints
+            ):
+                return schedule
+        return None
+
+
+class ThemoScheduleTemperatureSensor(_ThemoScheduleSensor):
+    """The active schedule's setpoint for the current hour."""
+
+    _attr_translation_key = "schedule_temperature"
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _unrecorded_attributes = frozenset({"upcoming"})
+
+    def __init__(
+        self,
+        coordinator: ThemoStateCoordinator,
+        device: ThemoDevice,
+        schedule_coordinator: ThemoScheduleCoordinator,
+    ) -> None:
+        super().__init__(coordinator, device, schedule_coordinator)
+        self._attr_unique_id = f"{device.id}_schedule_temperature"
+
+    @property
+    def native_value(self) -> float | None:
+        schedule = self._active_schedule()
+        if schedule is None:
+            return None
+        return setpoint_at(schedule.setpoints, dt_util.now())
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        schedule = self._active_schedule()
+        if schedule is None:
+            return {}
+        changes = upcoming_changes(
+            schedule.setpoints, dt_util.now(), SCHEDULE_UPCOMING_HOURS
+        )
+        return {
+            "schedule": schedule.name,
+            "upcoming": [
+                {"start": start.isoformat(), "temperature": value}
+                for start, value in changes
+            ],
+        }
+
+
+class ThemoScheduleNextChangeSensor(_ThemoScheduleSensor):
+    """When the active schedule's setpoint changes next."""
+
+    _attr_translation_key = "schedule_next_change"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+
+    def __init__(
+        self,
+        coordinator: ThemoStateCoordinator,
+        device: ThemoDevice,
+        schedule_coordinator: ThemoScheduleCoordinator,
+    ) -> None:
+        super().__init__(coordinator, device, schedule_coordinator)
+        self._attr_unique_id = f"{device.id}_schedule_next_change"
+
+    def _next(self) -> tuple[datetime, float] | None:
+        schedule = self._active_schedule()
+        if schedule is None:
+            return None
+        return next_change(schedule.setpoints, dt_util.now())
+
+    @property
+    def native_value(self) -> datetime | None:
+        change = self._next()
+        return None if change is None else change[0]
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        change = self._next()
+        return {} if change is None else {"temperature": change[1]}

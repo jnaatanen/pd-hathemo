@@ -30,7 +30,9 @@
             "floor_temperature": {"name": "Floor temperature"},
             "outside_temperature": {"name": "Outside temperature"},
             "heating_today_running": {"name": "Heating today (running)"},
-            "heating_today_total": {"name": "Heating today"}
+            "heating_today_total": {"name": "Heating today"},
+            "schedule_temperature": {"name": "Scheduled temperature"},
+            "schedule_next_change": {"name": "Next schedule change"}
         },
         "light": {
             "backlight": {"name": "Backlight"}
